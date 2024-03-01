@@ -1,12 +1,13 @@
 import {CheckmarkIcon} from '@sanity/icons'
 import {useCallback} from 'react'
-import {DocumentActionProps, useClient} from 'sanity'
+import {DocumentActionProps, useClient, useDocumentOperation} from 'sanity'
 
 import {useWorkflowContext} from '../components/WorkflowContext'
 import {API_VERSION} from '../constants'
 
 export function CompleteWorkflow(props: DocumentActionProps) {
   const {id} = props
+  const {publish} = useDocumentOperation(props.id, props.type)
   const {metadata, loading, error, states} = useWorkflowContext(id)
   const client = useClient({apiVersion: API_VERSION})
 
@@ -15,8 +16,8 @@ export function CompleteWorkflow(props: DocumentActionProps) {
   }
 
   const handle = useCallback(() => {
-    client.delete(`workflow-metadata.${id}`)
-  }, [id, client])
+    client.delete(`workflow-metadata.${id}`).then(() => publish.execute())
+  }, [id, client, publish])
 
   if (!metadata) {
     return null
@@ -29,7 +30,7 @@ export function CompleteWorkflow(props: DocumentActionProps) {
     icon: CheckmarkIcon,
     type: 'dialog',
     disabled: loading || error || !isLastState,
-    label: `Complete Workflow`,
+    label: `Complete & Publish`,
     title: isLastState
       ? `Removes the document from the Workflow process`
       : `Cannot remove from workflow until in the last state`,

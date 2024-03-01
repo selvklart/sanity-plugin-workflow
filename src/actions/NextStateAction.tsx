@@ -1,7 +1,7 @@
 import {ArrowRightIcon, CheckmarkIcon} from '@sanity/icons'
 import {useToast} from '@sanity/ui'
 import {useCallback} from 'react'
-import {useCurrentUser, useValidationStatus} from 'sanity'
+import {useCurrentUser, useDocumentOperation, useValidationStatus} from 'sanity'
 import {DocumentActionProps, useClient} from 'sanity'
 
 import {useWorkflowContext} from '../components/WorkflowContext'
@@ -12,6 +12,7 @@ import {State} from '../types'
 // eslint-disable-next-line complexity
 export function NextStateAction(props: DocumentActionProps) {
   const {id, type} = props
+  const {publish} = useDocumentOperation(props.id, props.type)
 
   const user = useCurrentUser()
   const client = useClient({apiVersion: API_VERSION})
@@ -57,8 +58,8 @@ export function NextStateAction(props: DocumentActionProps) {
   }
 
   const onComplete = useCallback(() => {
-    client.delete(`workflow-metadata.${id}`)
-  }, [id, client])
+    client.delete(`workflow-metadata.${id}`).then(() => publish.execute())
+  }, [id, client, publish])
 
   // Remove button if:
   // Document is not in Workflow OR
@@ -74,9 +75,9 @@ export function NextStateAction(props: DocumentActionProps) {
       icon: CheckmarkIcon,
       type: 'dialog',
       disabled: loading || error || !isLastState,
-      label: `Complete Workflow`,
+      label: `Complete & Publish`,
       title: isLastState
-        ? `Removes the document from the Workflow process`
+        ? `Removes the document from the Workflow process, and publishes it`
         : `Cannot remove from workflow until in the last state`,
       onHandle: () => {
         onComplete()

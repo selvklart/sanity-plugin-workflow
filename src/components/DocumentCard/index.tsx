@@ -43,6 +43,7 @@ export function DocumentCard(props: DocumentCardProps) {
     toggleInvalidDocumentId,
     userList,
   } = props
+  const {_id, _type} = item
   const {assignees = [], documentId} = item._metadata ?? {}
   const schema = useSchema()
   const state = states.find((s) => s.id === item._metadata?.state)
@@ -180,6 +181,8 @@ export function DocumentCard(props: DocumentCardProps) {
                   <CompleteButton
                     documentId={documentId}
                     disabled={!userRoleCanDrop}
+                    _id={_id}
+                    _type={_type}
                   />
                 ) : null}
               </Flex>
@@ -188,6 +191,8 @@ export function DocumentCard(props: DocumentCardProps) {
                   <CompleteButton
                     documentId={documentId}
                     disabled={!userRoleCanDrop}
+                    _id={_id}
+                    _type={_type}
                   />
                 </Stack>
               ) : null}

@@ -1,17 +1,20 @@
 import {CheckmarkIcon} from '@sanity/icons'
 import {Box, Button, Text, Tooltip, useToast} from '@sanity/ui'
 import React from 'react'
-import {useClient} from 'sanity'
+import {useClient, useDocumentOperation} from 'sanity'
 
 import {API_VERSION} from '../../constants'
 
 type CompleteButtonProps = {
   documentId: string
   disabled: boolean
+  _id: string
+  _type: string
 }
 
 export default function CompleteButton(props: CompleteButtonProps) {
-  const {documentId, disabled = false} = props
+  const {documentId, disabled = false, _id, _type} = props
+  const {publish} = useDocumentOperation(_id, _type)
   const client = useClient({apiVersion: API_VERSION})
   const toast = useToast()
 
@@ -26,6 +29,7 @@ export default function CompleteButton(props: CompleteButtonProps) {
 
         client
           .delete(`workflow-metadata.${id}`)
+          .then(() => publish.execute())
           .then(() => {
             toast.push({
               status: 'success',
@@ -39,7 +43,7 @@ export default function CompleteButton(props: CompleteButtonProps) {
             })
           })
       },
-      [client, toast]
+      [client, toast, publish]
     )
 
   return (
@@ -47,14 +51,14 @@ export default function CompleteButton(props: CompleteButtonProps) {
       portal
       content={
         <Box padding={2}>
-          <Text size={1}>Remove this document from Workflow</Text>
+          <Text size={1}>Remove this document from Workflow & Publish</Text>
         </Box>
       }
     >
       <Button
         value={documentId}
         onClick={handleComplete}
-        text="Complete"
+        text="Complete & Publish"
         icon={CheckmarkIcon}
         tone="positive"
         mode="ghost"
