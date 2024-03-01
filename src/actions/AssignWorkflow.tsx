@@ -7,7 +7,7 @@ import UserAssignment from '../components/UserAssignment'
 import {useWorkflowContext} from '../components/WorkflowContext'
 import {API_VERSION} from '../constants'
 
-export function AssignWorkflow(props: DocumentActionProps) {
+export function AssignWorkflow(props: DocumentActionProps, primary: boolean) {
   const {id} = props
   const {metadata, loading, error} = useWorkflowContext(id)
   const [isDialogOpen, setDialogOpen] = useState(false)
@@ -21,12 +21,21 @@ export function AssignWorkflow(props: DocumentActionProps) {
     return null
   }
 
+  if (primary && metadata.assignees?.length > 0) {
+    return null
+  }
+
+  if (!primary && !metadata?.assignees?.length) {
+    return null
+  }
+
   return {
     icon: UsersIcon,
     type: 'dialog',
     disabled: !metadata || loading || error,
     label: `Assign`,
     title: metadata ? null : `Document is not in Workflow`,
+    tone: 'default',
     dialog: isDialogOpen && {
       type: 'popover',
       onClose: () => {

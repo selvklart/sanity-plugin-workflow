@@ -36,6 +36,6 @@ export function CompleteWorkflow(props: DocumentActionProps) {
     onHandle: () => {
       handle()
     },
-    color: 'positive',
+    tone: 'default',
   }
 }

@@ -54,6 +54,7 @@ export function BeginWorkflow(props: DocumentActionProps) {
   return {
     icon: SplitVerticalIcon,
     type: 'dialog',
+    tone: 'default',
     disabled: metadata || loading || error || beginning || complete,
     label: beginning ? `Beginning...` : `Begin Workflow`,
     onHandle: () => {

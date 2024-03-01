@@ -1,5 +1,6 @@
-import {ArrowLeftIcon, ArrowRightIcon} from '@sanity/icons'
+import {ArrowRightIcon, CheckmarkIcon} from '@sanity/icons'
 import {useToast} from '@sanity/ui'
+import {useCallback} from 'react'
 import {useCurrentUser, useValidationStatus} from 'sanity'
 import {DocumentActionProps, useClient} from 'sanity'
 
@@ -9,7 +10,7 @@ import {arraysContainMatchingString} from '../helpers/arraysContainMatchingStrin
 import {State} from '../types'
 
 // eslint-disable-next-line complexity
-export function UpdateWorkflow(props: DocumentActionProps, actionState: State) {
+export function NextStateAction(props: DocumentActionProps) {
   const {id, type} = props
 
   const user = useCurrentUser()
@@ -55,57 +56,79 @@ export function UpdateWorkflow(props: DocumentActionProps, actionState: State) {
       })
   }
 
+  const onComplete = useCallback(() => {
+    client.delete(`workflow-metadata.${id}`)
+  }, [id, client])
+
   // Remove button if:
   // Document is not in Workflow OR
-  // The current State is the same as this actions State
-  if (!metadata || (currentState && currentState.id === actionState.id)) {
+  // The task has not been assigned to anyone
+  if (!metadata || !metadata.assignees || metadata.assignees?.length === 0) {
     return null
   }
 
-  const currentStateIndex = states.findIndex((s) => s.id === currentState?.id)
-  const actionStateIndex = states.findIndex((s) => s.id === actionState.id)
-  const direction = actionStateIndex > currentStateIndex ? 'promote' : 'demote'
-  const DirectionIcon = direction === 'promote' ? ArrowRightIcon : ArrowLeftIcon
-  const directionLabel = direction === 'promote' ? 'Promote' : 'Demote'
+  const state = states.find((s) => s.id === metadata.state)
+  const isLastState = state?.id === states[states.length - 1].id
+  if (isLastState) {
+    return {
+      icon: CheckmarkIcon,
+      type: 'dialog',
+      disabled: loading || error || !isLastState,
+      label: `Complete Workflow`,
+      title: isLastState
+        ? `Removes the document from the Workflow process`
+        : `Cannot remove from workflow until in the last state`,
+      onHandle: () => {
+        onComplete()
+      },
+      tone: 'default',
+    }
+  }
+
+  const nextStateIndex = states.findIndex((s) => s.id === currentState?.id) + 1
+  const nextState = states[nextStateIndex]
+
+  const DirectionIcon = ArrowRightIcon
+  const directionLabel = 'Promote'
 
   const userRoleCanUpdateState =
-    user?.roles?.length && actionState?.roles?.length
+    user?.roles?.length && nextState?.roles?.length
       ? // If the Action state is limited to specific roles
         // check that the current user has one of those roles
         arraysContainMatchingString(
           user.roles.map((r) => r.name),
-          actionState.roles
+          nextState.roles
         )
       : // No roles specified on the next state, so anyone can update
-        actionState?.roles?.length !== 0
+        nextState?.roles?.length !== 0
 
   const actionStateIsAValidTransition =
     currentState?.id && currentState?.transitions?.length
       ? // If the Current State limits transitions to specific States
         // Check that the Action State is in Current State's transitions array
-        currentState.transitions.includes(actionState.id)
+        currentState.transitions.includes(nextState.id)
       : // Otherwise this isn't a problem
         true
 
-  const userAssignmentCanUpdateState = actionState.requireAssignment
+  const userAssignmentCanUpdateState = nextState.requireAssignment
     ? // If the Action State requires assigned users
       // Check the current user ID is in the assignees array
       currentUser && assignees?.length && assignees.includes(currentUser.id)
     : // Otherwise this isn't a problem
       true
 
-  let title = `${directionLabel} State to "${actionState.title}"`
+  let title = `${directionLabel} State to "${nextState.title}"`
 
   if (!userRoleCanUpdateState) {
-    title = `Your User role cannot ${directionLabel} State to "${actionState.title}"`
+    title = `Your User role cannot ${directionLabel} State to "${nextState.title}"`
   } else if (!actionStateIsAValidTransition) {
-    title = `You cannot ${directionLabel} State to "${actionState.title}" from "${currentState?.title}"`
+    title = `You cannot ${directionLabel} State to "${nextState.title}" from "${currentState?.title}"`
   } else if (!userAssignmentCanUpdateState) {
-    title = `You must be assigned to the document to ${directionLabel} State to "${actionState.title}"`
+    title = `You must be assigned to the document to ${directionLabel} State to "${nextState.title}"`
   } else if (currentState?.requireValidation && isValidating) {
-    title = `Document is validating, cannot ${directionLabel} State to "${actionState.title}"`
+    title = `Document is validating, cannot ${directionLabel} State to "${nextState.title}"`
   } else if (hasValidationErrors) {
-    title = `Document has validation errors, cannot ${directionLabel} State to "${actionState.title}"`
+    title = `Document has validation errors, cannot ${directionLabel} State to "${nextState.title}"`
   }
 
   return {
@@ -120,8 +143,8 @@ export function UpdateWorkflow(props: DocumentActionProps, actionState: State) {
       !actionStateIsAValidTransition ||
       !userAssignmentCanUpdateState,
     title,
-    label: actionState.title,
+    label: nextState.title,
+    onHandle: () => onHandle(id, nextState),
     tone: 'default',
-    onHandle: () => onHandle(id, actionState),
   }
 }
