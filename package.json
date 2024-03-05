@@ -1,7 +1,7 @@
 {
-  "name": "sanity-plugin-workflow",
+  "name": "@selvklart/sanity-plugin-workflow",
   "version": "1.0.3",
-  "description": "A demonstration of a custom content publishing workflow using Sanity.",
+  "description": "A demonstration of a custom content publishing workflow using Sanity. Tweaked by Selvklart.",
   "keywords": [
     "sanity",
     "sanity-plugin"
