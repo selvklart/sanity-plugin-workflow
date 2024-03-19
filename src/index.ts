@@ -2,6 +2,7 @@ import {definePlugin, DocumentActionProps, isObjectInputProps} from 'sanity'
 
 import {AssignWorkflow} from './actions/AssignWorkflow'
 import {BeginWorkflow} from './actions/BeginWorkflow'
+import {CancelWorkflow} from './actions/CancelWorkflow'
 import {CompleteWorkflow} from './actions/CompleteWorkflow'
 import {NextStateAction} from './actions/NextStateAction'
 import {PublishAction} from './actions/PublishAction'
@@ -96,6 +97,7 @@ export const workflow = definePlugin<WorkflowConfig>(
                 UpdateWorkflow(props, state)
             ),
             (props) => CompleteWorkflow(props),
+            (props) => CancelWorkflow(props),
             (props) => PublishAction(props, false, publishAction),
             ...nativeActions,
           ]
