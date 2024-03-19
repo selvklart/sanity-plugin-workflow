@@ -83,9 +83,10 @@ export const workflow = definePlugin<WorkflowConfig>(
           /// 7. Complete workflow (only visible if in workflow, disabled if not approved)
           /// 8. Secondary publish (only visible if in a workflow)
           /// 9. Unpublish, Discard changes, Duplicate, Delete
-          const [publishAction, ...nativeActions] = prev
+          const publishAction = prev.find(({action}) => action === 'publish')
+          const nativeActions = prev.filter(({action}) => action !== 'publish')
           return [
-            (props) => PublishAction(props, publishAction, true),
+            (props) => PublishAction(props, true, publishAction),
             (props) => BeginWorkflow(props),
             (props) => AssignWorkflow(props, true),
             (props) => NextStateAction(props),
@@ -95,7 +96,7 @@ export const workflow = definePlugin<WorkflowConfig>(
                 UpdateWorkflow(props, state)
             ),
             (props) => CompleteWorkflow(props),
-            (props) => PublishAction(props, publishAction, false),
+            (props) => PublishAction(props, false, publishAction),
             ...nativeActions,
           ]
         },
